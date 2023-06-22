@@ -101,7 +101,7 @@ app.post(URI, async (req, res) => {
     let config = {
       method: 'POST',
       maxBodyLength: Infinity,
-      url: `https://www.zohoapis.com/bigin/v1/Deals/${contact_id}/Notes?`,
+      url: `https://www.zohoapis.com/bigin/v1/Contacts/${contact_id}/Notes?`,
       headers: { 
         'Content-Type': 'application/json', 
         'Authorization': 'Bearer ' + access_token
