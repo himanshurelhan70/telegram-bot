@@ -1,50 +1,106 @@
+const fs = require('fs');
 require('dotenv').config();
 const express = require('express');
 const axios = require('axios');
 const bodyParser = require('body-parser');
 
-// generating Access Token from refresh token
-let config2 = {
-  method: 'post',
-  maxBodyLength: Infinity,
-  url: 'https://accounts.zoho.com/oauth/v2/token?refresh_token=1000.c18da7192bc0d683421b8466120f68ec.db2e7f358e3fec1cd5b206b063f8bbee&client_id=1000.O72V5M9XZUDDGHCQH2661R1M2LRX2M&client_secret=45241802a67a0fa902090a9e428185212260d830d6&grant_type=refresh_token',
-  headers: { 
-  }
-};
+const app = express();
+app.use(bodyParser.json());
+let data = '';
+let idsArray = [];
+let access_token = ''; // Updated to store the access token
 
-axios.request(config2)
-.then((response) => {
-     global.access_token = response.data.access_token
-  console.log(access_token);
-})
-.catch((error) => {
-  console.log(error);
-});
+// Function to obtain Zoho access token
+function getZohoAccessToken() {
+  let config = {
+    method: 'post',
+    maxBodyLength: Infinity,
+    url: 'https://accounts.zoho.com/oauth/v2/token?refresh_token=1000.fc2564271fdea7786371bbf9f7278bdb.43c7ae474098b56357a5612ad2455c23&client_id=1000.G73LKHN42126L4O4L6AGP0Y57B48UA&client_secret=b24d8b4b3a7fe61ca795fa59d29c28af2c3d578223&grant_type=refresh_token',
+    headers: {},
+    data: data
+  };
 
-const access_token = '1000.35886232d3d92324271d0c23201021f5.11b2e99aae43a17259829fec0847f778';
-
-
-// ////////////////
-const { TOKEN, SERVER_URL } = process.env
-const TELEGRAM_API = `https://api.telegram.org/bot${TOKEN}`
-const URI = `/webhook/${TOKEN}`
-const WEBHOOK_URL = SERVER_URL + URI
-
-const app = express()
-app.use(bodyParser.json())
-
-const init = async () => {
-    const res = await axios.get(`${TELEGRAM_API}/setWebhook?url=${WEBHOOK_URL}`)
-    console.log(res.data);
+  return axios.request(config)
+    .then((response) => {
+      access_token = response.data.access_token; // Store the access token
+      return access_token;
+    })
+    .catch((error) => {
+      throw error;
+    });
 }
 
+// Function to retrieve contact IDs
+function retrieveContactIds() {
+  let config = {
+    method: 'get',
+    maxBodyLength: Infinity,
+    url: 'https://www.zohoapis.com/bigin/v1/Contacts',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + access_token
+    }
+  };
+  return axios.request(config)
+    .then((response) => {
+      const responsedata = JSON.parse(JSON.stringify(response.data));
+      idsArray = responsedata.data.map(item => item.id);
+      return idsArray;
+    })
+    .catch((error) => {
+      throw error;
+    });
+}
 
-app.post(URI, async (req, res) => {
+// Obtain Zoho access token and retrieve contact IDs
+function getAccessTokenAndContactIds() {
+  return getZohoAccessToken()
+    .then(() => {
+      return retrieveContactIds();
+    })
+    .catch((error) => {
+      throw error;
+    });
+}
 
+// Write contact IDs to a file
+function writeContactIdsToFile() {
+  fs.writeFile('idsArray.json', JSON.stringify(idsArray), 'utf8', (err) => {
+    if (err) {
+      console.error('Error writing idsArray to file:', err);
+    } else {
+      console.log('idsArray has been exported to idsArray.json');
+      console.log(idsArray);
+      setupRouteHandler(idsArray, access_token);
+    }
+  });
+}
+
+// Execute token refresh and contact ID retrieval
+getAccessTokenAndContactIds()
+  .then(() => {
+    writeContactIdsToFile();
+  })
+  .catch((error) => {
+    console.log(error);
+  });
+  
+// code for Telegram webhook and Zoho Bigin integration
+function setupRouteHandler(idsArray, access_token) {
+  const { TOKEN, SERVER_URL } = process.env;
+  const TELEGRAM_API = `https://api.telegram.org/bot${TOKEN}`;
+  const URI = `/webhook/${TOKEN}`;
+  const WEBHOOK_URL = SERVER_URL + URI;
+
+  const init = async () => {
+    const res = await axios.get(`${TELEGRAM_API}/setWebhook?url=${WEBHOOK_URL}`);
+    console.log(res.data);
+  };
+
+  app.post(URI, async (req, res) => {
     console.log("response obj", req.body);
     var content = "";
 
-    // extracting required values from the request using optional chaining method
     const group_name = req?.body?.message?.chat?.title;
     const user_name = req?.body?.message?.from?.username;
     const first_name = req?.body?.message?.from?.first_name;
@@ -54,8 +110,8 @@ app.post(URI, async (req, res) => {
 
     // setting up dateTime into required format
     const dateTimeObj = new Date(unixDate*1000);
-    const dateTimeString = dateTimeObj.toLocaleString();
-    console.log("Date and time is", dateTimeString);
+    const dateTimeString = dateTimeObj.toLocaleString('en-US');
+    console.log(dateTimeString);
 
     const dateTimeArr = dateTimeString.split(",");
 
@@ -74,8 +130,8 @@ app.post(URI, async (req, res) => {
     timeArr1.pop();
     const finalTime = `${timeArr1.join(":")}${timeArr[1]}`;
     console.log("FinalTime is ", finalTime);
-    
-    // content is the final msg that will be pushed on ZOHO Bigin
+
+
     if(user_name){
       content =`${group_name} | ${user_name} | ${finalDate} ${finalTime} - ${message}`;
     }
@@ -87,49 +143,48 @@ app.post(URI, async (req, res) => {
     }
 
 
-    // inserting data in Zoho Bigin
-    const contact_id = "4850571000002677272"; 
-    
-    let data = JSON.stringify({
-      "data": [
-        {
-          "Note_Content": content
-        }
-      ]
-    });
-        
-    let config = {
-      method: 'POST',
-      maxBodyLength: Infinity,
-      url: `https://www.zohoapis.com/bigin/v1/Contacts/${contact_id}/Notes?`,
-      headers: { 
-        'Content-Type': 'application/json', 
-        'Authorization': 'Bearer ' + access_token
-      },
-      data : data
-    };
-    
-    axios.request(config)
-    .then((response) => {
-      // console.log(JSON.stringify(response.data));
-      console.log("Data successfully pushed to Bigin")
-    })
-    .catch((error) => {
-      console.log(error);
-    });
+    console.log('idsArray value just before loop : ', idsArray);
 
-    // end of insert record 
+    idsArray.forEach((contact_id) => {
+      console.log('Loop iteration:', contact_id);
+      
+      let data = JSON.stringify({
+        "data": [
+          {
+            "Note_Content": content
+          }
+        ]
+      });
 
+      let config = {
+        method: 'POST',
+        maxBodyLength: Infinity,
+        url: `https://www.zohoapis.com/bigin/v1/Contacts/${contact_id}/Notes?`,
+        headers: { 
+          'Content-Type': 'application/json', 
+          'Authorization': 'Bearer ' + access_token
+        },
+        data : data
+      };
 
-    // await axios.post(`${TELEGRAM_API}/sendMessage`, {
-    //     chat_id: chatId,
-    //     text: text
-    // })
-    return res.send()
+      axios.request(config)
+      .then((response) => {
+        // console.log(JSON.stringify(response.data));
+        console.log("Data successfully pushed to Bigin")
+      })
+      .catch((error) => {
+        console.log(error);
+      });
 
-})
- 
-app.listen(process.env.PORT || 6900, async () => {
-    console.log('🚀 app running on port', process.env.PORT || 6900);
+      // end of insert record
+      });
+
+      return res.send();
+  });
+
+  app.listen(process.env.PORT || 10000, async () => {
+    console.log('🚀 app running on port', process.env.PORT || 10000);
     await init();
-})
+  });
+}
+
