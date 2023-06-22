@@ -25,111 +25,111 @@ const access_token = '1000.35886232d3d92324271d0c23201021f5.11b2e99aae43a1725982
 
 
 // ////////////////
-// const { TOKEN, SERVER_URL } = process.env
-// const TELEGRAM_API = `https://api.telegram.org/bot${TOKEN}`
-// const URI = `/webhook/${TOKEN}`
-// const WEBHOOK_URL = SERVER_URL + URI
+const { TOKEN, SERVER_URL } = process.env
+const TELEGRAM_API = `https://api.telegram.org/bot${TOKEN}`
+const URI = `/webhook/${TOKEN}`
+const WEBHOOK_URL = SERVER_URL + URI
 
-// const app = express()
-// app.use(bodyParser.json())
+const app = express()
+app.use(bodyParser.json())
 
-// const init = async () => {
-//     const res = await axios.get(`${TELEGRAM_API}/setWebhook?url=${WEBHOOK_URL}`)
-//     console.log(res.data);
-// }
+const init = async () => {
+    const res = await axios.get(`${TELEGRAM_API}/setWebhook?url=${WEBHOOK_URL}`)
+    console.log(res.data);
+}
 
 
-// app.post(URI, async (req, res) => {
+app.post(URI, async (req, res) => {
 
-//     console.log("response obj", req.body);
-//     var content = "";
+    console.log("response obj", req.body);
+    var content = "";
 
-//     // extracting required values from the request using optional chaining method
-//     const group_name = req?.body?.message?.chat?.title;
-//     const user_name = req?.body?.message?.from?.username;
-//     const first_name = req?.body?.message?.from?.first_name;
-//     const last_name = req?.body?.message?.from?.last_name;
-//     const unixDate = req?.body?.message?.date;
-//     const message = req?.body?.message?.text;
+    // extracting required values from the request using optional chaining method
+    const group_name = req?.body?.message?.chat?.title;
+    const user_name = req?.body?.message?.from?.username;
+    const first_name = req?.body?.message?.from?.first_name;
+    const last_name = req?.body?.message?.from?.last_name;
+    const unixDate = req?.body?.message?.date;
+    const message = req?.body?.message?.text;
 
-//     // setting up dateTime into required format
-//     const dateTimeObj = new Date(unixDate*1000);
-//     const dateTimeString = dateTimeObj.toLocaleString();
-//     console.log("Date and time is", dateTimeString);
+    // setting up dateTime into required format
+    const dateTimeObj = new Date(unixDate*1000);
+    const dateTimeString = dateTimeObj.toLocaleString();
+    console.log("Date and time is", dateTimeString);
 
-//     const dateTimeArr = dateTimeString.split(",");
+    const dateTimeArr = dateTimeString.split(",");
 
-//     // setting up Date format
-//     const dateArr = dateTimeArr[0].trim().split("/");
-//     const date = dateArr[0];
-//     const month = dateArr[1];
-//     const year = dateArr[2];
-//     const finalDate = `${month}-${date}-${year}`;
-//     console.log("FinalDate is ", finalDate);
+    // setting up Date format
+    const dateArr = dateTimeArr[0].trim().split("/");
+    const date = dateArr[0];
+    const month = dateArr[1];
+    const year = dateArr[2];
+    const finalDate = `${month}-${date}-${year}`;
+    console.log("FinalDate is ", finalDate);
 
-//     // setting up Time format
-//     const timeString = dateTimeArr[1].trim();
-//     const timeArr = timeString.split(" ");
-//     const timeArr1 = timeArr[0].split(":");
-//     timeArr1.pop();
-//     const finalTime = `${timeArr1.join(":")}${timeArr[1]}`;
-//     console.log("FinalTime is ", finalTime);
+    // setting up Time format
+    const timeString = dateTimeArr[1].trim();
+    const timeArr = timeString.split(" ");
+    const timeArr1 = timeArr[0].split(":");
+    timeArr1.pop();
+    const finalTime = `${timeArr1.join(":")}${timeArr[1]}`;
+    console.log("FinalTime is ", finalTime);
     
-//     // content is the final msg that will be pushed on ZOHO Bigin
-//     if(user_name){
-//       content =`${group_name} | ${user_name} | ${finalDate} ${finalTime} - ${message}`;
-//     }
-//     else if (typeof(last_name) === 'undefined' || last_name === null){
-//       content =`${group_name} | ${first_name} | ${finalDate} ${finalTime} - ${message}`;
-//     }
-//     else{
-//       content =`${group_name} | ${first_name} ${last_name} | ${finalDate} ${finalTime} - ${message}`;
-//     }
+    // content is the final msg that will be pushed on ZOHO Bigin
+    if(user_name){
+      content =`${group_name} | ${user_name} | ${finalDate} ${finalTime} - ${message}`;
+    }
+    else if (typeof(last_name) === 'undefined' || last_name === null){
+      content =`${group_name} | ${first_name} | ${finalDate} ${finalTime} - ${message}`;
+    }
+    else{
+      content =`${group_name} | ${first_name} ${last_name} | ${finalDate} ${finalTime} - ${message}`;
+    }
 
 
-//     // inserting data in Zoho Bigin
-//     const contact_id = "4850571000002677272"; 
+    // inserting data in Zoho Bigin
+    const contact_id = "4850571000002677272"; 
     
-//     let data = JSON.stringify({
-//       "data": [
-//         {
-//           "Note_Content": content
-//         }
-//       ]
-//     });
+    let data = JSON.stringify({
+      "data": [
+        {
+          "Note_Content": content
+        }
+      ]
+    });
         
-//     let config = {
-//       method: 'POST',
-//       maxBodyLength: Infinity,
-//       url: `https://www.zohoapis.com/bigin/v1/Deals/${contact_id}/Notes?`,
-//       headers: { 
-//         'Content-Type': 'application/json', 
-//         'Authorization': 'Bearer ' + access_token
-//       },
-//       data : data
-//     };
+    let config = {
+      method: 'POST',
+      maxBodyLength: Infinity,
+      url: `https://www.zohoapis.com/bigin/v1/Deals/${contact_id}/Notes?`,
+      headers: { 
+        'Content-Type': 'application/json', 
+        'Authorization': 'Bearer ' + access_token
+      },
+      data : data
+    };
     
-//     axios.request(config)
-//     .then((response) => {
-//       // console.log(JSON.stringify(response.data));
-//       console.log("Data successfully pushed to Bigin")
-//     })
-//     .catch((error) => {
-//       console.log(error);
-//     });
+    axios.request(config)
+    .then((response) => {
+      // console.log(JSON.stringify(response.data));
+      console.log("Data successfully pushed to Bigin")
+    })
+    .catch((error) => {
+      console.log(error);
+    });
 
-//     // end of insert record 
+    // end of insert record 
 
 
-//     // await axios.post(`${TELEGRAM_API}/sendMessage`, {
-//     //     chat_id: chatId,
-//     //     text: text
-//     // })
-//     return res.send()
+    // await axios.post(`${TELEGRAM_API}/sendMessage`, {
+    //     chat_id: chatId,
+    //     text: text
+    // })
+    return res.send()
 
-// })
+})
  
-// app.listen(process.env.PORT || 6900, async () => {
-//     console.log('🚀 app running on port', process.env.PORT || 6900);
-//     await init();
-// })
+app.listen(process.env.PORT || 6900, async () => {
+    console.log('🚀 app running on port', process.env.PORT || 6900);
+    await init();
+})
