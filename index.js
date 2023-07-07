@@ -50,8 +50,12 @@ async function setupRouteHandler(access_token) {
   //     fetchAndPushMessage(URI);
   //   });
 
-    const URI = await setWebhook();
-    fetchAndPushMessage(URI);
+    setWebhook()
+    .then((URI) => {
+      console.log("URI is", URI);
+      fetchAndPushMessage(URI);
+    });
+    
 }
 
 const setWebhook = async () => {
@@ -63,7 +67,7 @@ const setWebhook = async () => {
   const response = await axios.get(
     `${TELEGRAM_API}/setWebhook?url=${WEBHOOK_URL}`
   );
-  console.log(`setWebhook function returns - ${response.data}`);
+  console.log("setWebhook Info - ", response.data);
 
   return URI;
 };
