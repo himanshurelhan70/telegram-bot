@@ -1,4 +1,5 @@
-const fs = require('fs');
+// const fs = require('fs');
+
 require('dotenv').config();
 const express = require('express');
 const axios = require('axios');
@@ -8,7 +9,7 @@ const app = express();
 app.use(bodyParser.json());
 let data = '';
 let idsArray = [];
-let access_token = ''; // Updated to store the access token
+let access_token = ''; // will be Updated to store the access token
 
 // Function to obtain Zoho access token
 function getZohoAccessToken() {
@@ -31,59 +32,67 @@ function getZohoAccessToken() {
 }
 
 // Function to retrieve contact IDs
-function retrieveContactIds() {
-  let config = {
-    method: 'get',
-    maxBodyLength: Infinity,
-    url: 'https://www.zohoapis.com/bigin/v1/Contacts',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + access_token
-    }
-  };
-  return axios.request(config)
-    .then((response) => {
-      const responsedata = JSON.parse(JSON.stringify(response.data));
-      idsArray = responsedata.data.map(item => item.id);
-      return idsArray;
-    })
-    .catch((error) => {
-      throw error;
-    });
-}
+// function retrieveContactIds() {
+//   let config = {
+//     method: 'get',
+//     maxBodyLength: Infinity,
+//     url: 'https://www.zohoapis.com/bigin/v1/Contacts',
+//     headers: {
+//       'Content-Type': 'application/json',
+//       'Authorization': 'Bearer ' + access_token
+//     }
+//   };
+//   return axios.request(config)
+//     .then((response) => {
+//       const responsedata = JSON.parse(JSON.stringify(response.data));
+//       idsArray = responsedata.data.map(item => item.id);
+//       return idsArray;
+//     })
+//     .catch((error) => {
+//       throw error;
+//     });
+// }
 
 // Obtain Zoho access token and retrieve contact IDs
-function getAccessTokenAndContactIds() {
-  return getZohoAccessToken()
-    .then(() => {
-      return retrieveContactIds();
-    })
-    .catch((error) => {
-      throw error;
-    });
-}
+// function getAccessTokenAndContactIds() {
+//   return getZohoAccessToken()
+//     .then(() => {
+//       return retrieveContactIds();
+//     })
+//     .catch((error) => {
+//       throw error;
+//     });
+// }
 
 // Write contact IDs to a file
-function writeContactIdsToFile() {
-  fs.writeFile('idsArray.json', JSON.stringify(idsArray), 'utf8', (err) => {
-    if (err) {
-      console.error('Error writing idsArray to file:', err);
-    } else {
-      console.log('idsArray has been exported to idsArray.json');
-      console.log(idsArray);
-      setupRouteHandler(idsArray, access_token);
-    }
-  });
-}
+// function writeContactIdsToFile() {
+//   fs.writeFile('idsArray.json', JSON.stringify(idsArray), 'utf8', (err) => {
+//     if (err) {
+//       console.error('Error writing idsArray to file:', err);
+//     } else {
+//       console.log('idsArray has been exported to idsArray.json');
+//       console.log(idsArray);
+//       setupRouteHandler(idsArray, access_token);
+//     }
+//   });
+// }
 
 // Execute token refresh and contact ID retrieval
-getAccessTokenAndContactIds()
+// getAccessTokenAndContactIds()
+//   .then(() => {
+//     writeContactIdsToFile();
+//   })
+//   .catch((error) => {
+//     console.log(error);
+//   });
+
+getZohoAccessToken()
   .then(() => {
-    writeContactIdsToFile();
+    console.log("successfully generated access token");
   })
   .catch((error) => {
-    console.log(error);
-  });
+    console.log("Not able to generate access token");
+  })
   
 // code for Telegram webhook and Zoho Bigin integration
 function setupRouteHandler(idsArray, access_token) {
