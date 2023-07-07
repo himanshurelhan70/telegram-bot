@@ -80,9 +80,8 @@ const fetchAndPushMessage = (URI) => {
     const message = req?.body?.message?.text;
 
     if(message.includes("/assign")){
-      const id = message.replace("/assign", "");
-      id.trim();
-      console.log("New contact id is ", id);
+      const id = message.replace("/assign", "").trim();
+      console.log("New contact id is -",id);
       contact_id = id;
 
       return res.send("Contact Id is updated");
@@ -138,6 +137,7 @@ const fetchAndPushMessage = (URI) => {
       data: data,
     };
 
+    console.log("Contact id is -",id);
     axios
       .request(config)
       .then((response) => {
