@@ -137,7 +137,7 @@ const fetchAndPushMessage = (URI) => {
       data: data,
     };
 
-    console.log("Contact id is -",id);
+    console.log("Contact id is -",contact_id);
     axios
       .request(config)
       .then((response) => {
