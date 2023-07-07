@@ -1,12 +1,10 @@
 require("dotenv").config();
 const express = require("express");
 const axios = require("axios");
-const bodyParser = require("body-parser");
 
 const app = express();
-app.use(bodyParser.json());
-let data = "";
-let idsArray = [];
+app.use(express.json());
+
 let access_token = ""; // will be Updated to store the access token
 const contact_id = "5734012000000420061";
 
@@ -40,6 +38,7 @@ getZohoAccessToken()
     console.log("Not able to generate access token");
   });
 
+
 // code for Telegram webhook and Zoho Bigin integration
 function setupRouteHandler(access_token) {
   const { TOKEN, SERVER_URL } = process.env;
@@ -53,6 +52,12 @@ function setupRouteHandler(access_token) {
     );
     console.log(res.data);
   };
+
+  app.listen(process.env.PORT || 10000, async () => {
+    console.log("🚀 app running on port", process.env.PORT || 10000);
+    await init();
+  });
+
 
   app.post(URI, async (req, res) => {
     console.log("response obj", req.body);
@@ -118,8 +123,7 @@ function setupRouteHandler(access_token) {
     axios
       .request(config)
       .then((response) => {
-        // console.log(JSON.stringify(response.data));
-        console.log("Data successfully pushed to Bigin");
+        console.log("Data successfully pushed to Bigin", JSON.stringify(response.data));
       })
       .catch((error) => {
         console.log(error);
@@ -128,10 +132,5 @@ function setupRouteHandler(access_token) {
     // end of insert record
 
     return res.send();
-  });
-
-  app.listen(process.env.PORT || 10000, async () => {
-    console.log("🚀 app running on port", process.env.PORT || 10000);
-    await init();
   });
 }
