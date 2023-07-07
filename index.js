@@ -10,6 +10,7 @@ app.use(bodyParser.json());
 let data = '';
 let idsArray = [];
 let access_token = ''; // will be Updated to store the access token
+const contact_id = 5734012000000420061;
 
 // Function to obtain Zoho access token
 function getZohoAccessToken() {
@@ -89,13 +90,14 @@ function getZohoAccessToken() {
 getZohoAccessToken()
   .then(() => {
     console.log("successfully generated access token");
+    setupRouteHandler(access_token);
   })
   .catch((error) => {
     console.log("Not able to generate access token");
   })
   
 // code for Telegram webhook and Zoho Bigin integration
-function setupRouteHandler(idsArray, access_token) {
+function setupRouteHandler(access_token) {
   const { TOKEN, SERVER_URL } = process.env;
   const TELEGRAM_API = `https://api.telegram.org/bot${TOKEN}`;
   const URI = `/webhook/${TOKEN}`;
@@ -152,10 +154,11 @@ function setupRouteHandler(idsArray, access_token) {
     }
 
 
-    console.log('idsArray value just before loop : ', idsArray);
+    // console.log('idsArray value just before loop : ', idsArray);
 
-    idsArray.forEach((contact_id) => {
-      console.log('Loop iteration:', contact_id);
+    
+    // idsArray.forEach((contact_id) => {
+    //   console.log('Loop iteration:', contact_id);
       
       let data = JSON.stringify({
         "data": [
@@ -186,7 +189,7 @@ function setupRouteHandler(idsArray, access_token) {
       });
 
       // end of insert record
-      });
+      // });
 
       return res.send();
   });
