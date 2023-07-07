@@ -6,8 +6,8 @@ const app = express();
 app.use(express.json());
 
 let access_token = ""; // will be Updated to store the access token
-const contact_id = "5734012000000420061";
-// let contact_id = "";
+// const contact_id = "5734012000000420061";
+let contact_id = "";
 const PORT = process.env.PORT || 10000;
 
 app.listen(PORT, () => {
@@ -45,11 +45,6 @@ getZohoAccessToken()
 
 
 async function setupRouteHandler(access_token) {
-  // setWebhook()
-  //   .then((URI) => { 
-  //     fetchAndPushMessage(URI);
-  //   });
-
     setWebhook()
     .then((URI) => {
       console.log("URI is", URI);
@@ -83,6 +78,15 @@ const fetchAndPushMessage = (URI) => {
     const last_name = req?.body?.message?.from?.last_name;
     const unixDate = req?.body?.message?.date;
     const message = req?.body?.message?.text;
+
+    if(message.includes("/assign")){
+      const id = message.replace("/assign", "");
+      id.trim();
+      console.log("New contact id is ", id);
+      contact_id = id;
+
+      return res.send("Contact Id is updated");
+    }
 
     // setting up dateTime into required format
     const dateTimeObj = new Date(unixDate * 1000);
