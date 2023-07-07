@@ -6,7 +6,14 @@ const app = express();
 app.use(express.json());
 
 let access_token = ""; // will be Updated to store the access token
-const contact_id = "5734012000000420061";
+// const contact_id = "5734012000000420061";
+let contact_id = "";
+const PORT = process.env.PORT || 10000;
+
+app.listen(PORT, () => {
+  console.log("🚀 app running on port", PORT);
+});
+
 
 // Function to obtain Zoho access token
 function getZohoAccessToken() {
@@ -37,28 +44,33 @@ getZohoAccessToken()
   });
 
 
-// code for Telegram webhook and Zoho Bigin integration
-function setupRouteHandler(access_token) {
+async function setupRouteHandler(access_token) {
+  // setWebhook()
+  //   .then((URI) => { 
+  //     fetchAndPushMessage(URI);
+  //   });
+
+    const URI = await setWebhook();
+    fetchAndPushMessage(URI);
+}
+
+const setWebhook = async () => {
   const { TOKEN, SERVER_URL } = process.env;
   const TELEGRAM_API = `https://api.telegram.org/bot${TOKEN}`;
   const URI = `/webhook/${TOKEN}`;
   const WEBHOOK_URL = SERVER_URL + URI;
 
-  const init = async () => {
-    const res = await axios.get(
-      `${TELEGRAM_API}/setWebhook?url=${WEBHOOK_URL}`
-    );
-    console.log(res.data);
-  };
+  const response = await axios.get(
+    `${TELEGRAM_API}/setWebhook?url=${WEBHOOK_URL}`
+  );
+  console.log(`setWebhook function returns - ${response.data}`);
 
-  app.listen(process.env.PORT || 10000, async () => {
-    console.log("🚀 app running on port", process.env.PORT || 10000);
-    await init();
-  });
+  return URI;
+};
 
-
+const fetchAndPushMessage = (URI) => {
   app.post(URI, async (req, res) => {
-    console.log("response obj", req.body);
+    console.log("Request obj", req.body);
     var content = "";
 
     const group_name = req?.body?.message?.chat?.title;
@@ -71,7 +83,7 @@ function setupRouteHandler(access_token) {
     // setting up dateTime into required format
     const dateTimeObj = new Date(unixDate * 1000);
     const dateTimeString = dateTimeObj.toLocaleString("en-US");
-    console.log(dateTimeString);
+    console.log(`Decoded dateTimeString is ${dateTimeString}`);
 
     const dateTimeArr = dateTimeString.split(",");
 
@@ -121,7 +133,7 @@ function setupRouteHandler(access_token) {
     axios
       .request(config)
       .then((response) => {
-        console.log("Data successfully pushed to Bigin", JSON.stringify(response.data));
+        console.log(`Data successfully pushed to Bigin - ${content}`);
       })
       .catch((error) => {
         console.log(error);
@@ -131,4 +143,5 @@ function setupRouteHandler(access_token) {
 
     return res.send();
   });
-}
+};
+
