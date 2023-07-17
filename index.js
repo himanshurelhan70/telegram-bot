@@ -127,7 +127,7 @@ const fetchAndPushMessage = (URI) => {
     });
 
     let config = {
-      method: "POST",
+      method: "PATCH",
       maxBodyLength: Infinity,
       url: `https://www.zohoapis.com/bigin/v1/Companies/${contact_id}/Notes?`,
       headers: {
