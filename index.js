@@ -6,9 +6,9 @@ const app = express();
 app.use(express.json());
 
 let access_token = ""; // will be Updated to store the access token
-// const contact_id = "5734012000000420061";
-let contact_id = "";
-const PORT = process.env.PORT || 10000;
+let contact_id = "5734012000000580003";
+// let contact_id = "";
+const PORT = process.env.PORT || 6900;
 
 app.listen(PORT, () => {
   console.log("🚀 app running on port", PORT);
@@ -20,7 +20,7 @@ function getZohoAccessToken() {
   let config = {
     method: "post",
     maxBodyLength: Infinity,
-    url: "https://accounts.zoho.com/oauth/v2/token?refresh_token=1000.fc2564271fdea7786371bbf9f7278bdb.43c7ae474098b56357a5612ad2455c23&client_id=1000.G73LKHN42126L4O4L6AGP0Y57B48UA&client_secret=b24d8b4b3a7fe61ca795fa59d29c28af2c3d578223&grant_type=refresh_token",
+    url: "https://accounts.zoho.com/oauth/v2/token?refresh_token=1000.ccf806f0a7e032f28d21f6c67a4e9258.37f77fc63d0ea6b169c3897a4774028e&client_id=1000.G73LKHN42126L4O4L6AGP0Y57B48UA&client_secret=b24d8b4b3a7fe61ca795fa59d29c28af2c3d578223&grant_type=refresh_token",
   };
 
   return axios
@@ -44,6 +44,8 @@ getZohoAccessToken()
   });
 
 
+
+
 async function setupRouteHandler(access_token) {
     setWebhook()
     .then((URI) => {
@@ -52,6 +54,8 @@ async function setupRouteHandler(access_token) {
     });
     
 }
+
+
 
 const setWebhook = async () => {
   const { TOKEN, SERVER_URL } = process.env;
@@ -66,6 +70,8 @@ const setWebhook = async () => {
 
   return URI;
 };
+
+setupRouteHandler(access_token);
 
 const fetchAndPushMessage = (URI) => {
   app.post(URI, async (req, res) => {
@@ -127,9 +133,9 @@ const fetchAndPushMessage = (URI) => {
     });
 
     let config = {
-      method: "PATCH",
+      method: "POST",
       maxBodyLength: Infinity,
-      url: `https://www.zohoapis.com/bigin/v1/Companies/${contact_id}/Notes?`,
+      url: `https://www.zohoapis.com/bigin/v1/Accounts/${contact_id}/Notes`,
       headers: {
         "Content-Type": "application/json",
         Authorization: "Bearer " + access_token,
