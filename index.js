@@ -6,8 +6,8 @@ const app = express();
 app.use(express.json());
 
 let access_token = ""; // will be Updated to store the access token
-let contact_id = "5734012000000580003";
-// let contact_id = "";
+// let contact_id = "5734012000000580003";
+let contact_id = "";
 const PORT = process.env.PORT || 6900;
 
 app.listen(PORT, () => {
@@ -30,6 +30,7 @@ function getZohoAccessToken() {
       return access_token;
     })
     .catch((error) => {
+      console.log(error.message);
       throw error;
     });
 }
@@ -44,19 +45,21 @@ getZohoAccessToken()
   });
 
 
-
-
+// setup route handler
 async function setupRouteHandler(access_token) {
     setWebhook()
     .then((URI) => {
       console.log("URI is", URI);
       fetchAndPushMessage(URI);
+    })
+    .catch((error) => {
+      console.log('Something went wrong');
     });
     
 }
 
 
-
+// set webhook
 const setWebhook = async () => {
   const { TOKEN, SERVER_URL } = process.env;
   const TELEGRAM_API = `https://api.telegram.org/bot${TOKEN}`;
@@ -71,8 +74,7 @@ const setWebhook = async () => {
   return URI;
 };
 
-setupRouteHandler(access_token);
-
+// fetch and push message
 const fetchAndPushMessage = (URI) => {
   app.post(URI, async (req, res) => {
     console.log("Request obj", req.body);
@@ -83,12 +85,16 @@ const fetchAndPushMessage = (URI) => {
     const first_name = req?.body?.message?.from?.first_name;
     const last_name = req?.body?.message?.from?.last_name;
     const unixDate = req?.body?.message?.date;
-    const message = req?.body?.message?.text;
+    let message = req?.body?.message?.text;
 
-    if(message.includes("/assign")){
+    if(message === undefined){
+      message = "";
+    }
+    else if(message.includes("/assign"))
+    {
       const id = message.replace("/assign", "").trim();
-      console.log("New contact id is -",id);
       contact_id = id;
+      console.log("New contact id is -",id);
 
       return res.send("Contact Id is updated");
     }
@@ -117,11 +123,18 @@ const fetchAndPushMessage = (URI) => {
     console.log("FinalTime is ", finalTime);
 
     if (user_name) {
-      content = `${group_name} | ${user_name} | ${finalDate} ${finalTime} - ${message}`;
-    } else if (typeof last_name === "undefined" || last_name === null) {
-      content = `${group_name} | ${first_name} | ${finalDate} ${finalTime} - ${message}`;
-    } else {
-      content = `${group_name} | ${first_name} ${last_name} | ${finalDate} ${finalTime} - ${message}`;
+      content = `${group_name} | ${user_name} | ${finalDate} ${finalTime} | ${message}`;
+    } 
+    else if (typeof last_name === "undefined" || last_name === null) {
+      content = `${group_name} | ${first_name} | ${finalDate} ${finalTime} | ${message}`;
+    } 
+    else {
+      content = `${group_name} | ${first_name} ${last_name} | ${finalDate} ${finalTime} | ${message}`;
+    }
+
+    if(req?.body?.message?.photo || req?.body?.message?.video || req?.body?.message?.document){
+      const caption = req?.body?.message?.caption;
+      content += caption + " - [Attachment]";
     }
 
     let data = JSON.stringify({
@@ -150,7 +163,8 @@ const fetchAndPushMessage = (URI) => {
         console.log(`Data successfully pushed to Bigin - ${content}`);
       })
       .catch((error) => {
-        console.log(error);
+        console.log('error while pushing data to bigin');
+        console.log(error.message);
       });
 
     // end of insert record
