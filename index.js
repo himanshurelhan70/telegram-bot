@@ -1,6 +1,7 @@
-require("dotenv").config();
 const express = require("express");
 const axios = require("axios");
+const fs = require("fs");
+require("dotenv").config();
 
 const app = express();
 app.use(express.json());
@@ -13,7 +14,6 @@ const PORT = process.env.PORT || 6900;
 app.listen(PORT, () => {
   console.log("🚀 app running on port", PORT);
 });
-
 
 // Function to obtain Zoho access token
 function getZohoAccessToken() {
@@ -44,20 +44,17 @@ getZohoAccessToken()
     console.log("Not able to generate access token");
   });
 
-
 // setup route handler
 async function setupRouteHandler(access_token) {
-    setWebhook()
+  setWebhook()
     .then((URI) => {
       console.log("URI is", URI);
       fetchAndPushMessage(URI);
     })
     .catch((error) => {
-      console.log('Something went wrong');
+      console.log("Something went wrong");
     });
-    
 }
-
 
 // set webhook
 const setWebhook = async () => {
@@ -75,7 +72,7 @@ const setWebhook = async () => {
 };
 
 // fetch and push message
-const fetchAndPushMessage = (URI) => {
+const fetchAndPushMessage = async (URI) => {
   app.post(URI, async (req, res) => {
     console.log("Request obj", req.body);
     var content = "";
@@ -86,17 +83,10 @@ const fetchAndPushMessage = (URI) => {
     const last_name = req?.body?.message?.from?.last_name;
     const unixDate = req?.body?.message?.date;
     let message = req?.body?.message?.text;
+    let groupId = req?.body?.message?.chat?.id;
 
-    if(message === undefined){
+    if (message === undefined) {
       message = "";
-    }
-    else if(message.includes("/assign"))
-    {
-      const id = message.replace("/assign", "").trim();
-      contact_id = id;
-      console.log("New contact id is -",id);
-
-      return res.send("Contact Id is updated");
     }
 
     // setting up dateTime into required format
@@ -124,52 +114,130 @@ const fetchAndPushMessage = (URI) => {
 
     if (user_name) {
       content = `${group_name} | ${user_name} | ${finalDate} ${finalTime} | ${message}`;
-    } 
-    else if (typeof last_name === "undefined" || last_name === null) {
+    } else if (typeof last_name === "undefined" || last_name === null) {
       content = `${group_name} | ${first_name} | ${finalDate} ${finalTime} | ${message}`;
-    } 
-    else {
+    } else {
       content = `${group_name} | ${first_name} ${last_name} | ${finalDate} ${finalTime} | ${message}`;
     }
 
-    if(req?.body?.message?.photo || req?.body?.message?.video || req?.body?.message?.document){
+    if (
+      req?.body?.message?.photo ||
+      req?.body?.message?.video ||
+      req?.body?.message?.document
+    ) {
       const caption = req?.body?.message?.caption;
       content += caption + " - [Attachment]";
     }
 
-    let data = JSON.stringify({
-      data: [
-        {
-          Note_Content: content,
-        },
-      ],
+    // added
+    fs.readFile("data.txt", "utf-8", (error, data) => {
+      if (error) {
+        if (message.includes("/assign")) {
+          console.log("creating data.txt file");
+
+          const id = message.replace("/assign", "").trim();
+          contact_id = id;
+          console.log("New contact id is -", id);
+
+          const Ids = [
+            {
+              groupId: groupId,
+              contactId: contact_id,
+            },
+          ];
+
+          const entries = JSON.stringify(Ids, null, 2);
+
+          fs.writeFile("data.txt", entries, "utf-8", (err) => {
+            if (err) {
+              console.error("Error creating data.txt file:", err);
+            } else {
+              console.log("data.txt created successfully");
+            }
+          });
+        }
+        else {
+          console.log("set a contact id first");
+        }
+      }
+
+      else {
+        // fetching Ids from data.txt file
+        const Ids = JSON.parse(data);
+
+        let newEntry = {
+          groupId: groupId,
+          contactId: contact_id,
+        };
+
+        console.log("newEntry is - ", newEntry);
+
+        const existingObject = Ids.find(
+          (obj) => obj.groupId === newEntry.groupId
+        );
+
+        if (existingObject) {
+          console.log(
+            "GroupId already exists. Corresponding contactId:",
+            existingObject.contactId
+          );
+          contact_id = existingObject.contactId;
+        } else {
+          Ids.push(newEntry);
+          console.log("New object added to the array:", newEntry);
+          contact_id = newEntry.contactId;
+
+
+          // updating the data.txt file
+          const entries = JSON.stringify(Ids, null, 2);
+          fs.writeFile("data.txt", entries, "utf-8", (err) => {
+            if (err) {
+              console.error("Error writing to file:", err);
+            } else {
+              console.log("Data written to file successfully.");
+            }
+          });
+        }
+
+
+        let data = JSON.stringify({
+          data: [
+            {
+              Note_Content: content,
+            },
+          ],
+        });
+
+        let config = {
+          method: "POST",
+          maxBodyLength: Infinity,
+          url: `https://www.zohoapis.com/bigin/v1/Accounts/${contact_id}/Notes`,
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + access_token,
+          },
+          data: data,
+        };
+
+        console.log("Contact id is -", contact_id);
+        axios
+          .request(config)
+          .then((response) => {
+            console.log(`Data successfully pushed to Bigin - ${content}`);
+          })
+          .catch((error) => {
+            console.log("error while pushing data to bigin");
+            console.log(error.message);
+          });
+
+      }
     });
+    // added
 
-    let config = {
-      method: "POST",
-      maxBodyLength: Infinity,
-      url: `https://www.zohoapis.com/bigin/v1/Accounts/${contact_id}/Notes`,
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer " + access_token,
-      },
-      data: data,
-    };
 
-    console.log("Contact id is -",contact_id);
-    axios
-      .request(config)
-      .then((response) => {
-        console.log(`Data successfully pushed to Bigin - ${content}`);
-      })
-      .catch((error) => {
-        console.log('error while pushing data to bigin');
-        console.log(error.message);
-      });
 
     // end of insert record
 
     return res.send();
   });
 };
-
