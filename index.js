@@ -10,7 +10,6 @@ app.use(express.json());
 let access_token = ""; // will be Updated to store the access token
 // let contact_id = "5734012000000580003";
 let contact_id = "";
-let content = "";
 const PORT = process.env.PORT || 6900;
 
 app.listen(PORT, () => {
@@ -75,67 +74,68 @@ const setWebhook = async () => {
 
 // Fetch message
 const fetchMessage = async (req) => {
-  // console.log("my req obj", req);
-  const group_name = req?.body?.message?.chat?.title;
-  const user_name = req?.body?.message?.from?.username;
-  const first_name = req?.body?.message?.from?.first_name;
-  const last_name = req?.body?.message?.from?.last_name;
-  const unixDate = req?.body?.message?.date;
-  let message = req?.body?.message?.text;
+  return new Promise((resolve, reject) => {
+    // console.log("my req obj", req);
+    const group_name = req?.body?.message?.chat?.title;
+    const user_name = req?.body?.message?.from?.username;
+    const first_name = req?.body?.message?.from?.first_name;
+    const last_name = req?.body?.message?.from?.last_name;
+    const unixDate = req?.body?.message?.date;
+    let message = req?.body?.message?.text;
 
-  if (message === undefined) {
-    message = "";
-  }
+    if (message === undefined) {
+      message = "";
+    }
 
-  // setting up dateTime into required format
-  const dateTimeObj = new Date(unixDate * 1000);
-  const dateTimeString = dateTimeObj.toLocaleString("en-US");
-  console.log(`Decoded dateTimeString is ${dateTimeString}`);
+    // setting up dateTime into required format
+    const dateTimeObj = new Date(unixDate * 1000);
+    const dateTimeString = dateTimeObj.toLocaleString("en-US");
+    console.log(`Decoded dateTimeString is ${dateTimeString}`);
 
-  const dateTimeArr = dateTimeString.split(",");
+    const dateTimeArr = dateTimeString.split(",");
 
-  // setting up Date format
-  const dateArr = dateTimeArr[0].trim().split("/");
-  const date = dateArr[0];
-  const month = dateArr[1];
-  const year = dateArr[2];
-  const finalDate = `${month}-${date}-${year}`;
-  console.log("FinalDate is ", finalDate);
+    // setting up Date format
+    const dateArr = dateTimeArr[0].trim().split("/");
+    const date = dateArr[0];
+    const month = dateArr[1];
+    const year = dateArr[2];
+    const finalDate = `${month}-${date}-${year}`;
+    console.log("FinalDate is ", finalDate);
 
-  // setting up Time format
-  const timeString = dateTimeArr[1].trim();
-  const timeArr = timeString.split(" ");
-  const timeArr1 = timeArr[0].split(":");
-  timeArr1.pop();
-  const finalTime = `${timeArr1.join(":")}${timeArr[1]}`;
-  console.log("FinalTime is ", finalTime);
+    // setting up Time format
+    const timeString = dateTimeArr[1].trim();
+    const timeArr = timeString.split(" ");
+    const timeArr1 = timeArr[0].split(":");
+    timeArr1.pop();
+    const finalTime = `${timeArr1.join(":")}${timeArr[1]}`;
+    console.log("FinalTime is ", finalTime);
 
-  let content;
+    let content;
 
-  if (user_name) {
-    content = `${group_name} | ${user_name} | ${finalDate} ${finalTime} | ${message}`;
-  } else if (typeof last_name === "undefined" || last_name === null) {
-    content = `${group_name} | ${first_name} | ${finalDate} ${finalTime} | ${message}`;
-  } else {
-    content = `${group_name} | ${first_name} ${last_name} | ${finalDate} ${finalTime} | ${message}`;
-  }
+    if (user_name) {
+      content = `${group_name} | ${user_name} | ${finalDate} ${finalTime} | ${message}`;
+    } else if (typeof last_name === "undefined" || last_name === null) {
+      content = `${group_name} | ${first_name} | ${finalDate} ${finalTime} | ${message}`;
+    } else {
+      content = `${group_name} | ${first_name} ${last_name} | ${finalDate} ${finalTime} | ${message}`;
+    }
 
-  if (
-    req?.body?.message?.photo ||
-    req?.body?.message?.video ||
-    req?.body?.message?.document
-  ) {
-    const caption = req?.body?.message?.caption;
-    content += caption + " - [Attachment]";
-  }
+    if (
+      req?.body?.message?.photo ||
+      req?.body?.message?.video ||
+      req?.body?.message?.document
+    ) {
+      const caption = req?.body?.message?.caption;
+      content += caption + " - [Attachment]";
+    }
 
-  // return content;
-  resolve(content);
+    // return content;
+    resolve(content);
+  });
 };
 
 // Push Message
-const pushMessage = () => {
-  content = response;
+const pushMessage = async (content) => {
   console.log("content is -----", content);
 
   let newNote = JSON.stringify({
@@ -235,6 +235,8 @@ const fetchAndPushMessage = async (URI) => {
             });
           }
         }
+
+
         // If the message is not a command
         else {
           const Ids = JSON.parse(data);
@@ -245,6 +247,15 @@ const fetchAndPushMessage = async (URI) => {
             console.log("GroupId already exists. Corresponding contactId:", existingObject.contactId);
             contact_id = existingObject.contactId;
             console.log("Contact Id is - ", Ids);
+
+            // pushing message on ZOHO BIGIN
+            fetchMessage(req)
+              .then((content) => {
+                pushMessage(content);
+              })
+              .catch((err) => {
+                console.log("error in fetching content from request", err);
+              })
           }
           // if contact id is not assigned to this telegram group 
           else {
@@ -252,21 +263,6 @@ const fetchAndPushMessage = async (URI) => {
           }
         }
 
-
-
-        // / ////////////////////
-
-        
-
-        fetchMessage(req)
-          .then((content) => {
-              console.log("content is", content);
-          })
-          .catch((err) => {
-            console.log("error in fetching content from request",  err);
-          })
-
-       
       }
     });
 
