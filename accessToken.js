@@ -5,7 +5,7 @@ exports.getAccessToken = async () => {
     try {
         // reading file Data
         const readFile = fs.readFileSync("accessToken.txt", "utf-8");
-        var fileData = JSON.parse(readFile);
+        const fileData = JSON.parse(readFile);
         const storedTime = new Date(fileData.expiresAt);
         // console.log("fileData", fileData);
 
@@ -49,7 +49,9 @@ exports.getAccessToken = async () => {
 
             console.log("New token", newToken);
             return newToken;
-        } else {
+        } 
+        // runs when token exist and expires
+        else {
             console.log("fileData", fileData);
             return fileData.token;
         }
