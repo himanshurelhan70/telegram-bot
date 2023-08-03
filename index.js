@@ -1,8 +1,11 @@
+// importing libraries
 const express = require("express");
 const axios = require("axios");
 const fs = require("fs");
-const { resolve } = require("path");
 require("dotenv").config();
+
+// zoho access token
+const {getAccessToken} = require('./accessToken.js');
 
 const app = express();
 app.use(express.json());
@@ -17,23 +20,25 @@ app.listen(PORT, () => {
 });
 
 // Function to obtain Zoho access token
-function getZohoAccessToken() {
-  let config = {
-    method: "post",
-    maxBodyLength: Infinity,
-    url: "https://accounts.zoho.com/oauth/v2/token?refresh_token=1000.ccf806f0a7e032f28d21f6c67a4e9258.37f77fc63d0ea6b169c3897a4774028e&client_id=1000.G73LKHN42126L4O4L6AGP0Y57B48UA&client_secret=b24d8b4b3a7fe61ca795fa59d29c28af2c3d578223&grant_type=refresh_token",
-  };
+async function getZohoAccessToken() {
+  // let config = {
+  //   method: "post",
+  //   maxBodyLength: Infinity,
+  //   url: "https://accounts.zoho.com/oauth/v2/token?refresh_token=1000.ccf806f0a7e032f28d21f6c67a4e9258.37f77fc63d0ea6b169c3897a4774028e&client_id=1000.G73LKHN42126L4O4L6AGP0Y57B48UA&client_secret=b24d8b4b3a7fe61ca795fa59d29c28af2c3d578223&grant_type=refresh_token",
+  // };
 
-  return axios
-    .request(config)
-    .then((response) => {
-      access_token = response.data.access_token; // Store the access token
-      return access_token;
-    })
-    .catch((error) => {
-      console.log(error.message);
-      throw error;
-    });
+  // return axios
+  //   .request(config)
+  //   .then((response) => {
+  //     access_token = response.data.access_token; // Store the access token
+  //     return access_token;
+  //   })
+  //   .catch((error) => {
+  //     console.log(error.message);
+  //     throw error;
+  //   });
+  access_token = await getAccessToken();
+  console.log("access token", access_token);
 }
 
 getZohoAccessToken()
@@ -174,6 +179,7 @@ const pushMessage = async (content) => {
 // fetch and push message
 const fetchAndPushMessage = async (URI) => {
   app.post(URI, async (req, res) => {
+    await getZohoAccessToken();
     let groupId = req?.body?.message?.chat?.id;
     let message = req?.body?.message?.text || "";
 
